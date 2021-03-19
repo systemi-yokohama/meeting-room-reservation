@@ -7,13 +7,17 @@ function doPost (e) {
   const str = { text: e.parameter.text }.text
 
   if (!str.indexOf('list')) {
-    const b = /(?<command>[^ ]+)\s+(?<roomName>[^ ]+)/
-    const c = /(?<command>[^ ]+)\s+(?<roomName>[^ ]+)\s+(?<day>(\d{4}-\d{2}))/
+    const b = /(?<command>[^\s]+)\s+(?<roomName>[^\s]+)/
+    const c = /(?<command>[^\s]+)\s+(?<roomName>[^\s]+)\s+(?<day>([0-9０-９]{4}[-ー‐−―][0-9０-９]{2}))/
 
     if (str.match(c)) {
       const strGroup = str.match(c).groups
 
-      if (isDate(strGroup.day) === 0) return ContentService.createTextOutput(str + '\n入力した日付を確認して下さい。')
+      try {
+        isDate(strGroup.day)
+      } catch (error) {
+        return ContentService.createTextOutput(error.message)
+      }
 
       return ContentService.createTextOutput(getCalendarEvents(strGroup, 1))
     } else if (str.match(b)) {
@@ -23,8 +27,8 @@ function doPost (e) {
       return ContentService.createTextOutput(roomList())
     }
   } else if (!str.indexOf('add')) {
-    const d = /(?<command>[^ ]+)($|\s+)((?<roomName>[^ ]+))($|\s+(?<day>(\d{4}-\d{2}-\d{2})))($|\s+(?<startTime>\d{1,2}:\d{2})-(?<endTime>\d{1,2}:\d{2}))\s+(("(?<title1>[^"]+)")|(?<title2>[^ ]+))\s+(((?<name1>\([^"]+\)))|(?<name2>[^ ]+))/
-    const f = /(?<command>[^ ]+)($|\s+)((?<roomName>[^ ]+))($|\s+(?<day>(\d{4}-\d{2}-\d{2})))($|\s+(?<startTime>\d{1,2}:\d{2})-(?<endTime>\d{1,2}:\d{2}))\s+(("(?<title1>[^"]+)")|(?<title2>[^ ]+))/
+    const d = /(?<command>[^\s]+)($|\s+)((?<roomName>[^\s]+))($|\s+(?<day>([0-9０-９]{4}[-ー‐−―][0-9０-９]{2}[-ー‐−―][0-9０-９]{2})))($|\s+(?<startTime>[0-9０-９]{1,2}[:：][0-9０-９]{2})-(?<endTime>[0-9０-９]{1,2}[:：][0-9０-９]{2}))\s+((["“”](?<title1>[^["“”]]+)["“”])|(?<title2>[^\s]+))\s+(((?<name1>[(（][^["“”]]+[)）]))|(?<name2>[^\s]+))/
+    const f = /(?<command>[^\s]+)($|\s+)((?<roomName>[^\s]+))($|\s+(?<day>([0-9０-９]{4}[-ー‐−―][0-9０-９]{2}[-ー‐−―][0-9０-９]{2})))($|\s+(?<startTime>[0-9０-９]{1,2}[:：][0-9０-９]{2})-(?<endTime>[0-9０-９]{1,2}[:：][0-9０-９]{2}))\s+((["“”](?<title1>[^["“”]]+)["“”])|(?<title2>[^\s]+))/
 
     if (str.match(d)) {
       const strGroup = str.match(d).groups
@@ -32,16 +36,32 @@ function doPost (e) {
       const name = strGroup.name1 || strGroup.name2
       strGroup.title = title
       strGroup.name = name
-      if (isDate(strGroup.day) === 0) return ContentService.createTextOutput(str + '\n入力した日付を確認して下さい。')
-      if (isTime(strGroup.startTime, strGroup.endTime) === 0) return ContentService.createTextOutput(str + '\n入力した時刻を確認して下さい。')
+      try {
+        isDate(strGroup.day)
+      } catch (error) {
+        return ContentService.createTextOutput(error.message)
+      }
+      try {
+        isTime(strGroup.startTime, strGroup.endTime)
+      } catch (error) {
+        return ContentService.createTextOutput(error.message)
+      }
 
       return addRoom(strGroup)
     } else if (str.match(f)) {
       const strGroup = str.match(f).groups
       const title = strGroup.title1 || strGroup.title2
       strGroup.title = title
-      if (isDate(strGroup.day) === 0) return ContentService.createTextOutput(str + '\n入力した日付を確認して下さい。')
-      if (isTime(strGroup.startTime, strGroup.endTime) === 0) return ContentService.createTextOutput(str + '\n入力した時刻を確認して下さい。')
+      try {
+        isDate(strGroup.day)
+      } catch (error) {
+        return ContentService.createTextOutput(error.message)
+      }
+      try {
+        isTime(strGroup.startTime, strGroup.endTime)
+      } catch (error) {
+        return ContentService.createTextOutput(error.message)
+      }
 
       return addRoom(strGroup)
     }
@@ -50,7 +70,7 @@ function doPost (e) {
   } else if (str === '') {
     return ContentService.createTextOutput('コマンドが入力されていません。')
   } else {
-    return ContentService.createTextOutput(str + '\nコマンドを正しく入力してください。')
+    return ContentService.createTextOutput(`\`${str}\`\nコマンドを正しく入力してください。`)
   }
 }
 
@@ -160,48 +180,42 @@ function roomList () {
 
 function isDate (date) {
   // YYYY-mm の判定 この場合mmの範囲のみの判定
-  if (date.match(/\d{4}-\d{2}-\d{2}/)) {
-    let mm = date.match(/(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})/).groups.month
-    let dd = date.match(/(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})/).groups.day
+  if (date.match(/[0-9０-９]{4}[-ー‐−―][0-9０-９]{2}[-ー‐−―][0-9０-９]{2}/)) {
+    let mm = date.match(/(?<year>[0-9０-９]{4})[-ー‐−―](?<month>[0-9０-９]{2})[-ー‐−―](?<day>[0-9０-９]{2})/).groups.month
+    let dd = date.match(/(?<year>[0-9０-９]{4})[-ー‐−―](?<month>[0-9０-９]{2})[-ー‐−―](?<day>[0-9０-９]{2})/).groups.day
 
-    mm = mm - 0
-    dd = dd - 0
+    mm = Number(mm)
+    dd = Number(dd)
 
     if (mm < 1 || mm > 12 || dd < 1 || dd > 31) {
-      return 0
-    } else {
-      return 1
+      throw new Error(`\`${date}\` は正しい日付ではありません。`)
     }
   // mm の判定
-  } else if (date.match(/\d{4}-\d{2}/)) {
-    let mm = date.match(/(?<year>\d{4})-(?<month>\d{2})/).groups.month
+  } else if (date.match(/[0-9０-９]{4}[-ー‐−―][0-9０-９]{2}/)) {
+    let mm = date.match(/(?<year>[0-9０-９]{4})[-ー‐−―](?<month>[0-9０-９]{2})/).groups.month
 
-    mm = mm - 0
+    mm = Number(mm)
 
     if (mm < 1 || mm > 12) {
-      return 0
-    } else {
-      return 1
+      throw new Error(`\`${date}\` は正しい日付ではありません。`)
     }
   }
 }
 
 function isTime (starttime, endtime) {
-  const start = starttime.match(/(?<hour>\d{1,2}):(?<minute>\d{2})/).groups
-  const end = endtime.match(/(?<hour>\d{1,2}):(?<minute>\d{2})/).groups
+  const start = starttime.match(/(?<hour>[0-9０-９]{1,2})[:：](?<minute>[0-9０-９]{2})/).groups
+  const end = endtime.match(/(?<hour>[0-9０-９]{1,2})[:：](?<minute>[0-9０-９]{2})/).groups
 
-  const startHh = start.hour - 0
-  const startMm = start.minute - 0
-  const endHh = end.hour - 0
-  const endMm = end.minute - 0
+  const startHh = Number(start.hour)
+  const startMm = Number(start.minute)
+  const endHh = Number(end.hour)
+  const endMm = Number(end.minute)
 
-  if (startHh < 0 || startHh > 24 || endHh < 0 || endHh > 24 || startHh > endHh) {
-    return 0
-  } else if (startMm < 0 || startMm > 59 || endMm < 0 || endMm > 59) {
-    return 0
-  } else if (startHh === endHh && startMm >= endMm) {
-    return 0
-  } else {
-    return 1
+  if (startHh < 0 || startHh > 24 || startMm < 0 || startMm > 59) {
+    throw new Error(`\`${starttime}\` は正しい時刻ではありません。`)
+  } else if (endHh < 0 || endHh > 24 || endMm < 0 || endMm > 59) {
+    throw new Error(`\`${endtime}\` は正しい時刻ではありません。`)
+  } else if (startHh > endHh || (startHh === endHh && startMm >= endMm)) {
+    throw new Error(`開始時刻が終了時刻よりも未来に指定されています: \`${starttime}-${endtime}\``)
   }
 }
