@@ -1,26 +1,16 @@
 //use strict
+
+const SPREADSHEET_ID = '1IUovXfXQZINOKe-oWs2J7Ipt0V7XcCle7StL5Zslr4o'
+
 const debug = (str) => {
-  const ss = SpreadsheetApp.openById("1IUovXfXQZINOKe-oWs2J7Ipt0V7XcCle7StL5Zslr4o")
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID)
   const s = ss.getSheetByName("デバッグログ")
   s.appendRow([new Date().toLocaleString(), str])
 }
 
-let nowDate = new Date()
-let firstDate = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1) //月初日を取得
-let endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 6, 0) //月末日を取得
-Logger.log(firstDate)
-Logger.log(endDate)
-
-const hoge = (e) => debug(JSON.stringify(e))
-
-//日付表示の変換
-const _MMdd = (date) => Utilities.formatDate(date, 'JST', 'M/d (E)')
-const _HHmm = (hours) => Utilities.formatDate(hours, 'JST', 'HH:mm')
-
-Calendar = (id, name) => {
-
+const postToSlack = (id, name) => {
   //スプレッドシート読み込み(月初日から月末日の予定を取得)
-  const s = SpreadsheetApp.openById('1IUovXfXQZINOKe-oWs2J7Ipt0V7XcCle7StL5Zslr4o').getSheetByName(name + "予定出力")
+  const s = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(name + "予定出力")
 
   let cal = CalendarApp.getCalendarById(id) //カレンダーID取得
   let monthLater = new Date()
@@ -87,17 +77,39 @@ Calendar = (id, name) => {
   Logger.log(columns2)
 }
 
+const getMeetingRoomName = id => {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("Calender_ID")
+  const values = ss.getDataRange().getValues()
+  for (let i = 0; i < values.length; i++) {
+    if (values[i][0] === id) {
+      return values[i][1]
+    }
+  }
+  return null
+}
 
-const ss = SpreadsheetApp.openById('1IUovXfXQZINOKe-oWs2J7Ipt0V7XcCle7StL5Zslr4o').getSheetByName("Calender_ID")
-const values = ss.getDataRange().getValues()
+const onCalendarEventUpdated = e => {
+  let nowDate = new Date()
+  let firstDate = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1) //月初日を取得
+  let endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 6, 0) //月末日を取得
+  Logger.log(firstDate)
+  Logger.log(endDate)
 
-Logger.log(values)
+  //日付表示の変換
+  const _MMdd = (date) => Utilities.formatDate(date, 'JST', 'M/d (E)')
+  const _HHmm = (hours) => Utilities.formatDate(hours, 'JST', 'HH:mm')
+
+  const id = e.calendarId
+  const name = getMeetingRoomName(id)
+
+  postToSlack(id, name)
+}
+
 // for (value of values){
 //   if(events === value){
 //     Calendar([value][value])
 //   }
 // }
-Calendar('y.egusa@systemi.co.jp', "応接室")
 
 
 
