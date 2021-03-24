@@ -30,7 +30,6 @@ function doPost (e) {
     }
   } else if (!str.indexOf('add')) {
     const time = '[0-9０-９]{1,2}[:：][0-9０-９]{2}'
-    const re = new RegExp(`(?<startTime>${time})${hyfun}(?<endTime>${time})`)
 
     const d = new RegExp(`(?<command>[^\\s]+)($|\\s+)((?<roomName>[^\\s]+))($|\\s+(?<day>([0-9０-９]{4}${hyfun}[0-9０-９]{2}${hyfun}[0-9０-９]{2})))($|\\s+(?<startTime>${time})${hyfun}(?<endTime>${time}))\\s+((["“”](?<title1>[^"“”]+)["“”])|(?<title2>[^\\s]+))\\s+(((?<name1>[(（][^["“”]]+[)）]))|(?<name2>[^\\s]+))`)
 
