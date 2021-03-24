@@ -5,13 +5,15 @@
 // eslint-disable-next-line no-unused-vars
 function doPost (e) {
   const str = { text: e.parameter.text }.text
+  const hyfun = '[ー‐−―－-]'
 
   if (!str.indexOf('list')) {
     const b = /(?<command>[^\s]+)\s+(?<roomName>[^\s]+)/
-    const c = /(?<command>[^\s]+)\s+(?<roomName>[^\s]+)\s+(?<day>([0-9０-９]{4}[-ー‐−―][0-9０-９]{2}))/
+    const c = new RegExp(`(?<command>[^\\s]+)\\s+(?<roomName>[^\\s]+)\\s+(?<day>[0-9０-９]{4}${hyfun}[0-9０-９]{2})`)
 
     if (str.match(c)) {
       const strGroup = str.match(c).groups
+      strGroup.day = regexp(strGroup.day)
 
       try {
         isDate(strGroup.day)
@@ -27,8 +29,15 @@ function doPost (e) {
       return ContentService.createTextOutput(roomList())
     }
   } else if (!str.indexOf('add')) {
-    const d = /(?<command>[^\s]+)($|\s+)((?<roomName>[^\s]+))($|\s+(?<day>([0-9０-９]{4}[-ー‐−―][0-9０-９]{2}[-ー‐−―][0-9０-９]{2})))($|\s+(?<startTime>[0-9０-９]{1,2}[:：][0-9０-９]{2})[-ー‐−―](?<endTime>[0-9０-９]{1,2}[:：][0-9０-９]{2}))\s+((["“”](?<title1>[^["“”]]+)["“”])|(?<title2>[^\s]+))\s+(((?<name1>[(（][^["“”]]+[)）]))|(?<name2>[^\s]+))/
-    const f = /(?<command>[^\s]+)($|\s+)((?<roomName>[^\s]+))($|\s+(?<day>([0-9０-９]{4}[-ー‐−―][0-9０-９]{2}[-ー‐−―][0-9０-９]{2})))($|\s+(?<startTime>[0-9０-９]{1,2}[:：][0-9０-９]{2})[-ー‐−―](?<endTime>[0-9０-９]{1,2}[:：][0-9０-９]{2}))\s+((["“”](?<title1>[^["“”]]+)["“”])|(?<title2>[^\s]+))/
+    
+    const time = '[0-9０-９]{1,2}[:：][0-9０-９]{2}'
+    const re = new RegExp(`(?<startTime>${time})${hyfun}(?<endTime>${time})`)
+
+    const d = new RegExp(`(?<command>[^\\s]+)($|\\s+)((?<roomName>[^\\s]+))($|\\s+(?<day>([0-9０-９]{4}${hyfun}[0-9０-９]{2}${hyfun}[0-9０-９]{2})))($|\\s+(?<startTime>${time})${hyfun}(?<endTime>${time}))\\s+((["“”](?<title1>[^"“”]+)["“”])|(?<title2>[^\\s]+))\\s+(((?<name1>[(（][^["“”]]+[)）]))|(?<name2>[^\\s]+))`)
+    
+    const f = new RegExp(`(?<command>[^\\s]+)($|\\s+)((?<roomName>[^\\s]+))($|\\s+(?<day>([0-9０-９]{4}${hyfun}[0-9０-９]{2}${hyfun}[0-9０-９]{2})))($|\\s+(?<startTime>${time})${hyfun}(?<endTime>${time}))\\s+((["“”](?<title1>[^"“”]+)["“”])|(?<title2>[^\\s]+))`)
+    
+    const h = (`(?<command>[^\\s]+)($|\\s+)((?<roomName>[^\\s]+))($|\\s+(?<day>([0-9０-９]{4}${hyfun}[0-9０-９]{2}${hyfun}[0-9０-９]{2})))`)
 
     if (str.match(d)) {
       const strGroup = str.match(d).groups
@@ -36,6 +45,12 @@ function doPost (e) {
       const name = strGroup.name1 || strGroup.name2
       strGroup.title = title
       strGroup.name = name
+
+      strGroup.startTime = regexp(strGroup.startTime)
+      strGroup.endTime = regexp(strGroup.endTime)
+      strGroup.day = regexp(strGroup.day)
+
+      
       try {
         isDate(strGroup.day)
       } catch (error) {
@@ -48,10 +63,16 @@ function doPost (e) {
       }
 
       return addRoom(strGroup)
+
     } else if (str.match(f)) {
       const strGroup = str.match(f).groups
       const title = strGroup.title1 || strGroup.title2
       strGroup.title = title
+
+      strGroup.startTime = regexp(strGroup.startTime)
+      strGroup.endTime = regexp(strGroup.endTime)
+      strGroup.day = regexp(strGroup.day)
+
       try {
         isDate(strGroup.day)
       } catch (error) {
@@ -64,7 +85,10 @@ function doPost (e) {
       }
 
       return addRoom(strGroup)
-    }
+    } else if (str.match(h)) {
+       return ContentService.createTextOutput( str + '\n予定を追加する場合は日時、タイトルを入力してください。')
+    } 
+
   } else if (!str.indexOf('help')) {
     return ContentService.createTextOutput('<https://systemi.backlog.com/wiki/GENINFO/%E4%BC%9A%E8%AD%B0%E5%AE%A4%E3%81%AE%E4%BA%88%E7%B4%84%E6%96%B9%E6%B3%95|会議室予約方法>')
   } else if (str === '') {
@@ -72,6 +96,12 @@ function doPost (e) {
   } else {
     return ContentService.createTextOutput(`\`${str}\`\nコマンドを正しく入力してください。`)
   }
+}
+
+function regexp(str) {
+    return str.replace(/[０-９：―ー－]/g, function(s) {
+      return String.fromCharCode(s.charCodeAt(0) - 0xFEE0)
+    })
 }
 
 // スプレッドシートからカレンダーIDを取得する
@@ -179,10 +209,11 @@ function roomList () {
 }
 
 function isDate (date) {
+  const hyfun = '[ー‐−―－-]'
   // YYYY-mm の判定 この場合mmの範囲のみの判定
-  if (date.match(/[0-9０-９]{4}[-ー‐−―][0-9０-９]{2}[-ー‐−―][0-9０-９]{2}/)) {
-    let mm = date.match(/(?<year>[0-9０-９]{4})[-ー‐−―](?<month>[0-9０-９]{2})[-ー‐−―](?<day>[0-9０-９]{2})/).groups.month
-    let dd = date.match(/(?<year>[0-9０-９]{4})[-ー‐−―](?<month>[0-9０-９]{2})[-ー‐−―](?<day>[0-9０-９]{2})/).groups.day
+  if (date.match(`[0-9０-９]{4}${hyfun}[0-9０-９]{2}${hyfun}[0-9０-９]{2}`)) {
+    let mm = date.match(`(?<year>[0-9０-９]{4})${hyfun}(?<month>[0-9０-９]{2})${hyfun}(?<day>[0-9０-９]{2})`).groups.month
+    let dd = date.match(`(?<year>[0-9０-９]{4})${hyfun}(?<month>[0-9０-９]{2})${hyfun}(?<day>[0-9０-９]{2})`).groups.day
 
     mm = Number(mm)
     dd = Number(dd)
@@ -191,8 +222,8 @@ function isDate (date) {
       throw new Error(`\`${date}\` は正しい日付ではありません。`)
     }
   // mm の判定
-  } else if (date.match(/[0-9０-９]{4}[-ー‐−―][0-9０-９]{2}/)) {
-    let mm = date.match(/(?<year>[0-9０-９]{4})[-ー‐−―](?<month>[0-9０-９]{2})/).groups.month
+  } else if (date.match(`[0-9０-９]{4}${hyfun}[0-9０-９]{2}`)) {
+    let mm = date.match(`(?<year>[0-9０-９]{4})${hyfun}(?<month>[0-9０-９]{2})`).groups.month
 
     mm = Number(mm)
 
