@@ -60,7 +60,7 @@ const postToSlack = (id, name) => {
 
   //前回記録した予定の数と今回取得したイベント数を比較
   if (events.length < calendarEvents.length) {
-    return null
+    events[index].deleteEvent()
   }
   else if (events.length > calendarEvents.length) {
     //イベントが繰り返し予定の場合
@@ -72,6 +72,7 @@ const postToSlack = (id, name) => {
         Logger.log(eventId)
       }
     }
+    //予定タイトルに()を含む場合
     else if (arrTitle[index].indexOf("(" + ")") || arrTitle[index].indexOf("（" + "）")) {
       //SlackのwebhookURLを指定
       let postMsg = name + "予約\n" + _MMdd(arrDate[index]) + " " + _HHmm(arrStart_time[index]) + "-" + _HHmm(arrEnd_time[index]) + " " + arrTitle[index]
@@ -86,7 +87,10 @@ const postToSlack = (id, name) => {
         "payload": payload
       }
       UrlFetchApp.fetch(url, options)
-    } else {
+
+    }
+    //イベント数と前回のイベント数が同じ場合、タイトルに()が入っていない場合
+    else {
       //SlackのwebhookURLを指定
       let postMsg = name + "予約\n" + _MMdd(arrDate[index]) + " " + _HHmm(arrStart_time[index]) + "-" + _HHmm(arrEnd_time[index]) + " " + arrTitle[index] + " " + arrCreators[index]
 
@@ -219,4 +223,5 @@ const onCalendarEventUpdated = e => {
 //   ['桜木町シティビル会議スペース','c_56e76201ttkorffuhel1ml4prs@group.calendar.google.com'],
 //   ['テスト用','c_67e5qugtvehjagh1gjpg29gjbs@group.calendar.google.com']
 // ]
+
 
