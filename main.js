@@ -9,12 +9,21 @@ const debug = (str) => {
 }
 
 const postToSlack = (id, name) => {
+  let nowDate = new Date()
+  let firstDate = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1) //月初日を取得
+  let endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 6, 0) //月末日を取得
+  Logger.log(firstDate)
+  Logger.log(endDate)
+
+  //日付表示の変換
+  const _MMdd = (date) => Utilities.formatDate(date, 'JST', 'M/d (E)')
+  const _HHmm = (hours) => Utilities.formatDate(hours, 'JST', 'HH:mm')
   //スプレッドシート読み込み(月初日から月末日の予定を取得)
   const s = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(name + "予定出力")
 
   let cal = CalendarApp.getCalendarById(id) //カレンダーID取得
   let monthLater = new Date()
-  monthLater.setMonth(firstDate.getMonth() + 1, 0)　//１か月の日付を取得
+  monthLater.setMonth(firstDate.getMonth() + 6, 0)　//１か月の日付を取得
   let events = cal.getEvents(firstDate, monthLater)　//１か月のイベントを取得
   let arrDate = []//日付用の配列
   let arrTitle = []//イベント名の配列
@@ -23,9 +32,17 @@ const postToSlack = (id, name) => {
   let arrEnd_time = [] //イベント終了時刻の配列
   let arrCreators = [] //予定作成者の配列
 
+
+
   //前回記録した予定の最終行を取得
-  const columns1 = s.getRange(1, 1).getNextDataCell(SpreadsheetApp.Direction.DOWN).getRow();
-  Logger.log(columns1)
+  // const columns1 = s.getRange(1, 1).getNextDataCell(SpreadsheetApp.Direction.DOWN).getRow();
+  // Logger.log(columns1)
+
+  //スプレッドシートに入っている値を配列として全て取得
+  const calendarEvents = s.getDataRange().getValues()
+  Logger.log(calendarEvents)
+  Logger.log(calendarEvents.length)
+
 
   //イベントの日付、タイトル、更新日時、開始時刻、終了時刻、予定作成者を取得
   for (let i = 0; i < events.length; i++) {
@@ -42,22 +59,48 @@ const postToSlack = (id, name) => {
   let index = arrUpDate.indexOf(maxDay)
 
   //前回記録した予定の数と今回取得したイベント数を比較
-  if (events.length < columns1) {
-    events[index].deleteEvent()
-  } else {
-    //SlackのwebhookURLを指定
-    let postMsg = name + "予約\n" + _MMdd(arrDate[index]) + " " + _HHmm(arrStart_time[index]) + "-" + _HHmm(arrEnd_time[index]) + " " + arrTitle[index] + " " + arrCreators[index]
+  if (events.length < calendarEvents.length) {
+    return null
+  }
+  else if (events.length > calendarEvents.length) {
+    //イベントが繰り返し予定の場合
+    if (events[index].isRecurringEvent() === true) {
 
-    let url = "https://hooks.slack.com/services/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"
-    //渡すデータを指定する
-    let data = { /*"channel" : ch,*/ "username": "Googlecalendar-Bot", "text": postMsg, "icon_emoji": ":spiral_calendar_pad: " }
-    let payload = JSON.stringify(data)
-    let options = {
-      "method": "POST",
-      "contentType": "application/json",
-      "payload": payload
+      for (let i = 0; i < events.length; i++) {
+        let eventId = events[index].getId()
+        let recurringEvent = cal.getEventById(eventId)
+        Logger.log(eventId)
+      }
     }
-    UrlFetchApp.fetch(url, options)
+    else if (arrTitle[index].indexOf("(" + ")") || arrTitle[index].indexOf("（" + "）")) {
+      //SlackのwebhookURLを指定
+      let postMsg = name + "予約\n" + _MMdd(arrDate[index]) + " " + _HHmm(arrStart_time[index]) + "-" + _HHmm(arrEnd_time[index]) + " " + arrTitle[index]
+
+      let url = "https://hooks.slack.com/services/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"
+      //渡すデータを指定する
+      let data = { /*"channel" : ch,*/ "username": "Googlecalendar-Bot", "text": postMsg, "icon_emoji": ":spiral_calendar_pad: " }
+      let payload = JSON.stringify(data)
+      let options = {
+        "method": "POST",
+        "contentType": "application/json",
+        "payload": payload
+      }
+      UrlFetchApp.fetch(url, options)
+    } else {
+      //SlackのwebhookURLを指定
+      let postMsg = name + "予約\n" + _MMdd(arrDate[index]) + " " + _HHmm(arrStart_time[index]) + "-" + _HHmm(arrEnd_time[index]) + " " + arrTitle[index] + " " + arrCreators[index]
+
+      let url = "https://hooks.slack.com/services/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"
+      //渡すデータを指定する
+      let data = { /*"channel" : ch,*/ "username": "Googlecalendar-Bot", "text": postMsg, "icon_emoji": ":spiral_calendar_pad: " }
+      let payload = JSON.stringify(data)
+      let options = {
+        "method": "POST",
+        "contentType": "application/json",
+        "payload": payload
+      }
+      UrlFetchApp.fetch(url, options)
+    }
   }
 
   //処理終了後、スプレッドシートをクリアし、最新の予定を記録
@@ -73,9 +116,10 @@ const postToSlack = (id, name) => {
       ]
     )
   }
-  const columns2 = s.getRange(1, 1).getNextDataCell(SpreadsheetApp.Direction.DOWN).getRow();
-  Logger.log(columns2)
+
 }
+
+
 
 const getMeetingRoomName = id => {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("Calender_ID")
@@ -89,18 +133,10 @@ const getMeetingRoomName = id => {
 }
 
 const onCalendarEventUpdated = e => {
-  let nowDate = new Date()
-  let firstDate = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1) //月初日を取得
-  let endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 6, 0) //月末日を取得
-  Logger.log(firstDate)
-  Logger.log(endDate)
-
-  //日付表示の変換
-  const _MMdd = (date) => Utilities.formatDate(date, 'JST', 'M/d (E)')
-  const _HHmm = (hours) => Utilities.formatDate(hours, 'JST', 'HH:mm')
-
   const id = e.calendarId
+  debug(id)
   const name = getMeetingRoomName(id)
+  debug(name)
 
   postToSlack(id, name)
 }
