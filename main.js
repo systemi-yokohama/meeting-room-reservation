@@ -1,6 +1,6 @@
 //use strict
 
-const SPREADSHEET_ID = '1IUovXfXQZINOKe-oWs2J7Ipt0V7XcCle7StL5Zslr4o'
+const SPREADSHEET_ID = '1RkFxDI5wWxlZTxC8bLkR6DRHXYEvdk5jIwE64rGzYXE'
 
 const debug = (str) => {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID)
@@ -102,15 +102,13 @@ const postToSlack = (id, name) => {
   const _HHmm = (nowDate) => Utilities.formatDate(nowDate, 'JST', 'HH:mm')
 
   //SlackのwebhookURLを指定
-  let url = "https://hooks.slack.com/services/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" //江種
-  // let url = "https://hooks.slack.com/services/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" //テスト
-
+  let url = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Slack Incoming Webhook').getRange('A1').getValue()
   let text = ''
 
 
   // まず、削除されたイベントを見る
   for (let i = 0; i < removedEvents.length; i++) {
-    text += `【${removedEvents[i].title}】が削除されました\n`
+    text += `${_MMdd(removedEvents[i].startTime)} の【${removedEvents[i].title}】が削除されました。\n`
   }
 
   const hasCreatorNameInTitle = title => /.+[（(][^（()]+[）)]$/.test(title)
@@ -118,7 +116,7 @@ const postToSlack = (id, name) => {
   // 次に、追加されたイベントを見る
   if (addedEvents.length !== 0) {
     text += text.length === 0 ? '' : '\n'
-    text += ':calendar:追加された予定\n'
+    text += '・追加された予定\n'
     for (let i = 0; i < addedEvents.length; i++) {
       // const day = addedEvents[i].startTime
       const startTime = addedEvents[i].startTime
@@ -132,9 +130,9 @@ const postToSlack = (id, name) => {
   // 最後に、変更されたイベントを見る
   if (changedEvents.length !== 0) {
     text += text.length === 0 ? '' : '\n'
-    text += ':calendar:変更された予定\n'
+    text += '・変更された予定\n'
     for (let i = 0; i < changedEvents.length; i++) {
-      // const day = 
+      // const day =
       const startTime = changedEvents[i].startTime
       const endTime = changedEvents[i].endTime
       const title = changedEvents[i].title
@@ -143,7 +141,7 @@ const postToSlack = (id, name) => {
     }
 
   }
-  let roomName = name + "予約\n"
+  let roomName = ':calendar:' + name + "予約\n"
   let data = { "username": "Googlecalendar-Bot", "text": roomName + text, "icon_emoji": ":spiral_calendar_pad: " }
   let payload = JSON.stringify(data)
   let options = {
@@ -159,11 +157,11 @@ const postToSlack = (id, name) => {
 }
 
 const getMeetingRoomName = id => {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("Calender_ID")
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("カレンダーID")
   const values = ss.getDataRange().getValues()
   for (let i = 0; i < values.length; i++) {
-    if (values[i][0] === id) {
-      return values[i][1]
+    if (values[i][1] === id) {
+      return values[i][0]
     }
   }
   return null
@@ -171,9 +169,7 @@ const getMeetingRoomName = id => {
 
 const onCalendarEventUpdated = e => {
   const id = e.calendarId
-  debug(id)
   const name = getMeetingRoomName(id)
-  debug(name)
 
   postToSlack(id, name)
 }
