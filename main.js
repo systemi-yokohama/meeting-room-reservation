@@ -138,7 +138,7 @@ const postToSlack = (id, name) => {
       const startTime = changedEvents[i].startTime
       const endTime = changedEvents[i].endTime
       const title = changedEvents[i].title
-      const creator = hasCreatorNameInTitle(title) ? '' : `（${addedEvents[i].creators}）`
+      const creator = hasCreatorNameInTitle(title) ? '' : `（${changedEvents[i].creators}）`
       text += ` ${_MMdd(startTime)}-${_HHmm(endTime)} ${title}${creator}\n`
     }
 
