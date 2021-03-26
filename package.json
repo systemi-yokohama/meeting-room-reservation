@@ -1,0 +1,23 @@
+{
+  "name": "meeting-room-reservation",
+  "version": "0.1.0",
+  "description": "Slack のスラッシュコマンドと Google カレンダーを連動するツール",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/systemi-yokohama/meeting-room-reservation.git"
+  },
+  "author": "d.saikawa@systemi.co.jp",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/systemi-yokohama/meeting-room-reservation/issues"
+  },
+  "homepage": "https://github.com/systemi-yokohama/meeting-room-reservation#readme",
+  "devDependencies": {
+    "eslint": "^7.22.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.3.1",
+    "standard": "^16.0.3"
+  }
+}
