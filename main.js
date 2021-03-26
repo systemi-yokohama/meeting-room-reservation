@@ -1,4 +1,4 @@
-///use strict
+//use strict
 
 const SPREADSHEET_ID = '1IUovXfXQZINOKe-oWs2J7Ipt0V7XcCle7StL5Zslr4o'
 
@@ -102,7 +102,7 @@ const postToSlack = (id, name) => {
   const _HHmm = (nowDate) => Utilities.formatDate(nowDate, 'JST', 'HH:mm')
 
   //SlackのwebhookURLを指定
-  let url = "https://hooks.slack.com/services/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" //江種
+  let url = "https://hooks.slack.com/services/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" //江種
   // let url = "https://hooks.slack.com/services/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" //テスト
 
   let text = ''
@@ -125,7 +125,7 @@ const postToSlack = (id, name) => {
       const endTime = addedEvents[i].endTime
       const title = addedEvents[i].title
       const creator = hasCreatorNameInTitle(title) ? '' : `（${addedEvents[i].creators}）`
-      text += ` ${_MMdd(startTime)}-${_HHmm(endTime)} ${title}${creator}\n`
+      text += ` ${_MMdd(startTime)} ${_HHmm(startTime)}-${_HHmm(endTime)} ${title}${creator}\n`
     }
   }
 
@@ -139,7 +139,7 @@ const postToSlack = (id, name) => {
       const endTime = changedEvents[i].endTime
       const title = changedEvents[i].title
       const creator = hasCreatorNameInTitle(title) ? '' : `（${changedEvents[i].creators}）`
-      text += ` ${_MMdd(startTime)}-${_HHmm(endTime)} ${title}${creator}\n`
+      text += ` ${_MMdd(startTime)} ${_HHmm(startTime)}-${_HHmm(endTime)} ${title}${creator}\n`
     }
 
   }
