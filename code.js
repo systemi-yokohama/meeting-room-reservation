@@ -90,7 +90,7 @@ function doPost (e) {
       return ContentService.createTextOutput(`\`${str}\`\nコマンドを正しく入力してください（エラーコード: 001）。`)
     }
   } else if (str.startsWith('help')) {
-    return ContentService.createTextOutput('<https://systemi.backlog.com/wiki/GENINFO/%E4%BC%9A%E8%AD%B0%E5%AE%A4%E3%81%AE%E4%BA%88%E7%B4%84%E6%96%B9%E6%B3%95|会議室予約方法>')
+    return ContentService.createTextOutput('Backlog の<https://systemi.backlog.com/wiki/GENINFO/%E4%BC%9A%E8%AD%B0%E5%AE%A4%E3%81%AE%E4%BA%88%E7%B4%84%E6%96%B9%E6%B3%95|会議室予約方法>を参照下さい（リンクをクリックするとブラウザが開きます）。')
   } else if (str === '') {
     return ContentService.createTextOutput('コマンドが入力されていません。')
   } else {
