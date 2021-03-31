@@ -153,7 +153,9 @@ const postToSlack = (id, name) => {
 
   //処理終了後、スプレッドシートをクリアし、最新の予定を記録
   s.clear()
-  s.getRange(1, 1, events.length).setValues(Object.keys(currentEventObject).map(key => [JSON.stringify(currentEventObject[key])]))
+  if (events.length !== 0) {
+    s.getRange(1, 1, events.length).setValues(Object.keys(currentEventObject).map(key => [JSON.stringify(currentEventObject[key])]))
+  }
 }
 
 const getMeetingRoomName = id => {
