@@ -1,4 +1,4 @@
-/* global CalendarApp, ContentService, SpreadsheetApp, Utilities */
+/* global CalendarApp, ContentService, HtmlService, Logger, SpreadsheetApp, Utilities */
 
 'use strict'
 
@@ -7,6 +7,16 @@ const hyfun = '[ー‐−―－-]'
 
 // eslint-disable-next-line no-unused-vars
 function doPost (e) {
+  // パラメーターに eventId が存在した場合削除を実行する
+  if (e.parameters.eventId != null) {
+    const calendar = CalendarApp.getCalendarById(e.parameters.calendarId)
+    e.parameters.eventId.forEach(eventId => {
+      const event = calendar.getEventById(eventId)
+      event.deleteEvent()
+    })
+    return HtmlService.createHtmlOutput('<html><body>削除しました!</body><html>')
+  }
+
   const str = e.parameter.text
 
   if (str.startsWith('list')) {
@@ -121,12 +131,13 @@ function getRoomIdRecord (roomName) {
 // 「予定削除」のリンクを押したらここで処理される
 // eslint-disable-next-line no-unused-vars
 function doGet (e) {
-  const calendar = CalendarApp.getCalendarById(e.parameter.calendarId) // パラメーターのcalenderIdからカレンダーを指定する
-  const event = calendar.getEventById(e.parameter.eventId) // パラメーターのeventIdから予定を指定する
-
-  event.deleteEvent()
-
-  return ContentService.createTextOutput('予定を削除しました。')
+  Logger.log(JSON.stringify(e.parameter.calendarId))
+  const calendarId = e.parameter.calendarId
+  const isThisMonth = e.parameter.isThisMonth
+  const targetMonth = e.parameter.targetMonth
+  Logger.log(isThisMonth)
+  Logger.log(targetMonth)
+  return HtmlService.createHtmlOutput(getCalendarEvents2(calendarId, isThisMonth, targetMonth))
 }
 
 // カレンダーに予定を追加する
@@ -161,27 +172,64 @@ function getCalendarEvents (targetMonth, roomName, isThisMonth) {
     const endTime = new Date(today.getFullYear(), today.getMonth() + 1) // 取得された月の終わりの時間
     const events = calendar.getEvents(startTime, endTime)
 
-    return getList(events, calendarId, roomName)
+    return getList(events, calendarId, roomName, targetMonth, isThisMonth)
   } else {
     const today = new Date(targetMonth + '-01 00:00:00')
     const startTime = new Date(today.getFullYear(), today.getMonth()) // 指定された月の初めの時間
     const endTime = new Date(today.getFullYear(), today.getMonth() + 1) // 指定された月の終わりの時間
     const events = calendar.getEvents(startTime, endTime)
 
-    return getList(events, calendarId, roomName)
+    return getList(events, calendarId, roomName, targetMonth, isThisMonth)
   }
 }
 
 // listをメッセージにして返す
-function getList (events, calenderId, roomName) {
-  return events.reduce((acc, cur) => {
+function getList (events, calenderId, roomName, targetMonth, isThisMonth) {
+  const eventList = events.reduce((acc, cur) => {
+    const title = cur.getTitle()
+    const startYear = Utilities.formatDate(cur.getStartTime(), 'JST', 'yyyy-MM-dd')
+    const startMinutes = Utilities.formatDate(cur.getStartTime(), 'JST', 'HH:mm')
+    const endMinutes = Utilities.formatDate(cur.getEndTime(), 'JST', 'HH:mm')
+    const b = `${startYear} ${startMinutes}-${endMinutes}  ${title}  `
+    return acc + '\n' + b
+  }, `${CALENDAR_ICON}${roomName}の予約状況 \n <https://script.google.com/macros/s/AKfycby25Cd9xthpgthmNFCx1F7LlQ2QKqPs2OrHdJIH6zrgBYT_lBZlifbnFvzstemEjyGK/exec?calendarId=${calenderId}&targetMonth=${targetMonth}&isThisMonth=${isThisMonth}|予定を削除する場合はこちら>`)
+  return eventList
+}
+
+// カレンダーから予定を取得する
+function getCalendarEvents2 (calendarId, isThisMonth, targetMonth) {
+  const calendar = CalendarApp.getCalendarById(calendarId)
+  if (isThisMonth === 'true') {
+    const today = new Date() // 取得された日にち
+    const startTime = new Date(today.getFullYear(), today.getMonth()) // 取得された月の初めの時間
+    const endTime = new Date(today.getFullYear(), today.getMonth() + 1) // 取得された月の終わりの時間
+    const events = calendar.getEvents(startTime, endTime)
+
+    return getList2(events, calendarId)
+  } else {
+    const today = new Date(targetMonth + '-01 00:00:00')
+    const startTime = new Date(today.getFullYear(), today.getMonth()) // 指定された月の初めの時間
+    const endTime = new Date(today.getFullYear(), today.getMonth() + 1) // 指定された月の終わりの時間
+    const events = calendar.getEvents(startTime, endTime)
+
+    return getList2(events, calendarId)
+  }
+}
+
+// listをメッセージにして返す
+function getList2 (events, calendarId) {
+  let i = 0
+  const eventList = events.reduce((acc, cur) => {
+    i++
     const title = cur.getTitle()
     const eventID = cur.getId()
     const start = Utilities.formatDate(cur.getStartTime(), 'JST', 'yyyy-MM-dd HH:mm')
     const end = Utilities.formatDate(cur.getEndTime(), 'JST', 'HH:mm')
-    const b = `${start}-${end} ${title}  <https://script.google.com/a/systemi.co.jp/macros/s/AKfycby7qfJI5wXCXLV3QQPMv85C-ddctFnPnS81o3vQ/exec?roomId=${calenderId}&eventId=${eventID}|予定削除>`
-    return acc + '\n' + b
-  }, `${CALENDAR_ICON}${roomName}の予約状況`)
+    const b = `<input type="checkbox" name="eventId" value="${eventID}" id="event${i}"> <label for="event${i}">${start}-${end} ${title} </label>`
+    return acc + '<br>' + b
+  }, `<html><body><h2>予約状況</h2><p>削除したい予定のチェックボックスを選択して削除ボタンを押してください</p><form action="https://script.google.com/macros/s/AKfycbwIn2T_4jl0twOpWI0Cyl2aFF-qJYDk0TbYxIUduc3TkMNnLeOc9ZgW4lGE_FYv9eY/exec?source=deleteList&calendarId=${calendarId} "method="post"><input type="submit" value="削除">`)
+
+  return eventList + '</form></body></html>'
 }
 
 function roomList () {
