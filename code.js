@@ -183,6 +183,10 @@ function getCalendarEvents (targetMonth, roomName, isThisMonth) {
   }
 }
 
+function makeDayOfTheWeekString (date) {
+  return ['日', '月', '火', '水', '木', '金', '土'][date.getDay()]
+}
+
 // listをメッセージにして返す
 function getList (events, calenderId, roomName, targetMonth, isThisMonth) {
   const eventList = events.reduce((acc, cur) => {
@@ -190,7 +194,7 @@ function getList (events, calenderId, roomName, targetMonth, isThisMonth) {
     const startYear = Utilities.formatDate(cur.getStartTime(), 'JST', 'yyyy-MM-dd')
     const startMinutes = Utilities.formatDate(cur.getStartTime(), 'JST', 'HH:mm')
     const endMinutes = Utilities.formatDate(cur.getEndTime(), 'JST', 'HH:mm')
-    const b = `${startYear} ${startMinutes}-${endMinutes}  ${title}  `
+    const b = `${startYear}（${makeDayOfTheWeekString(cur.getStartTime())}） ${startMinutes}-${endMinutes}  ${title}  `
     return acc + '\n' + b
   }, `${CALENDAR_ICON}${roomName}の予約状況 \n <https://script.google.com/macros/s/AKfycby25Cd9xthpgthmNFCx1F7LlQ2QKqPs2OrHdJIH6zrgBYT_lBZlifbnFvzstemEjyGK/exec?calendarId=${calenderId}&targetMonth=${targetMonth}&isThisMonth=${isThisMonth}|予定を削除する場合はこちら>`)
   return eventList
@@ -223,9 +227,10 @@ function getListWithDeleteEventLinks (events, calendarId) {
     i++
     const title = cur.getTitle()
     const eventID = cur.getId()
-    const start = Utilities.formatDate(cur.getStartTime(), 'JST', 'yyyy-MM-dd HH:mm')
+    const startDate = Utilities.formatDate(cur.getStartTime(), 'JST', 'yyyy-MM-dd')
+    const startTime = Utilities.formatDate(cur.getStartTime(), 'JST', 'HH:mm')
     const end = Utilities.formatDate(cur.getEndTime(), 'JST', 'HH:mm')
-    const b = `<input type="checkbox" name="eventId" value="${eventID}" id="event${i}"> <label for="event${i}">${start}-${end} ${title} </label>`
+    const b = `<input type="checkbox" name="eventId" value="${eventID}" id="event${i}"> <label for="event${i}">${startDate}（${makeDayOfTheWeekString(cur.getStartTime())}） ${startTime}-${end} ${title} </label>`
     return acc + '<br>' + b
   }, `<html><body><h2>予約状況</h2><p>削除したい予定のチェックボックスを選択して削除ボタンを押してください</p><form action="https://script.google.com/macros/s/AKfycbwIn2T_4jl0twOpWI0Cyl2aFF-qJYDk0TbYxIUduc3TkMNnLeOc9ZgW4lGE_FYv9eY/exec?source=deleteList&calendarId=${calendarId} "method="post"><input type="submit" value="削除">`)
 
