@@ -137,7 +137,7 @@ function doGet (e) {
   const targetMonth = e.parameter.targetMonth
   Logger.log(isThisMonth)
   Logger.log(targetMonth)
-  return HtmlService.createHtmlOutput(getCalendarEvents2(calendarId, isThisMonth, targetMonth))
+  return HtmlService.createHtmlOutput(getCalendarEventsWithDeleteEventLinks(calendarId, isThisMonth, targetMonth))
 }
 
 // カレンダーに予定を追加する
@@ -197,7 +197,7 @@ function getList (events, calenderId, roomName, targetMonth, isThisMonth) {
 }
 
 // カレンダーから予定を取得する
-function getCalendarEvents2 (calendarId, isThisMonth, targetMonth) {
+function getCalendarEventsWithDeleteEventLinks (calendarId, isThisMonth, targetMonth) {
   const calendar = CalendarApp.getCalendarById(calendarId)
   if (isThisMonth === 'true') {
     const today = new Date() // 取得された日にち
@@ -205,19 +205,19 @@ function getCalendarEvents2 (calendarId, isThisMonth, targetMonth) {
     const endTime = new Date(today.getFullYear(), today.getMonth() + 1) // 取得された月の終わりの時間
     const events = calendar.getEvents(startTime, endTime)
 
-    return getList2(events, calendarId)
+    return getListWithDeleteEventLinks(events, calendarId)
   } else {
     const today = new Date(targetMonth + '-01 00:00:00')
     const startTime = new Date(today.getFullYear(), today.getMonth()) // 指定された月の初めの時間
     const endTime = new Date(today.getFullYear(), today.getMonth() + 1) // 指定された月の終わりの時間
     const events = calendar.getEvents(startTime, endTime)
 
-    return getList2(events, calendarId)
+    return getListWithDeleteEventLinks(events, calendarId)
   }
 }
 
 // listをメッセージにして返す
-function getList2 (events, calendarId) {
+function getListWithDeleteEventLinks (events, calendarId) {
   let i = 0
   const eventList = events.reduce((acc, cur) => {
     i++
