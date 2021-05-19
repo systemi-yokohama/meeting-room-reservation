@@ -1,25 +1,20 @@
-//use strict
+/* global CalendarApp, Logger, SpreadsheetApp, UrlFetchApp, Utilities */
+
+'use strict'
 
 const SPREADSHEET_ID = '1RkFxDI5wWxlZTxC8bLkR6DRHXYEvdk5jIwE64rGzYXE'
 
-const debug = (str) => {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID)
-  const s = ss.getSheetByName("デバッグログ")
-  s.appendRow([new Date().toLocaleString(), str])
-}
-
 const postToSlack = (id, name) => {
+  // スプレッドシート読み込み(月初日から月末日の予定を取得)
+  const s = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(`${name}予定出力`)
 
-  //スプレッドシート読み込み(月初日から月末日の予定を取得)
-  const s = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(name + "予定出力")
-
-  let cal = CalendarApp.getCalendarById(id) //カレンダーID取得
-  let nowDate = new Date()
-  let firstDate = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1) //月初日を取得
-  let endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 6, 0) //月末日を取得
+  const cal = CalendarApp.getCalendarById(id) // カレンダーID取得
+  const nowDate = new Date()
+  const firstDate = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1) // 月初日を取得
+  const endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 6, 0) // 月末日を取得
   Logger.log(firstDate)
   Logger.log(endDate)
-  let events = cal.getEvents(firstDate, endDate)　//6か月のイベントを取得
+  const events = cal.getEvents(firstDate, endDate) // 6か月のイベントを取得
   Logger.log(`events:${JSON.stringify(events)}`)
 
   const currentEventObject = events.reduce((acc, cur) => {
@@ -34,8 +29,7 @@ const postToSlack = (id, name) => {
   }, {})
   Logger.log(`currentEventObject:${JSON.stringify(currentEventObject)}`)
 
-
-  //スプレッドシートに入っている値を配列として全て取得
+  // スプレッドシートに入っている値を配列として全て取得
   const calendarEvents = s.getDataRange().getValues()
 
   const previousEventObject = calendarEvents.reduce((acc, cur) => {
@@ -85,7 +79,6 @@ const postToSlack = (id, name) => {
   })
 
   Object.keys(previousEventObject).forEach(key => {
-
     const currentEvent = currentEventObject[key]
     if (!currentEvent) {
       const previousEvent = previousEventObject[key]
@@ -101,10 +94,9 @@ const postToSlack = (id, name) => {
   const _MMdd = (nowDate) => Utilities.formatDate(nowDate, 'JST', 'yyyy-MM-dd')
   const _HHmm = (nowDate) => Utilities.formatDate(nowDate, 'JST', 'HH:mm')
 
-  //SlackのwebhookURLを指定
-  let url = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Slack Incoming Webhook').getRange('A1').getValue()
+  // SlackのwebhookURLを指定
+  const url = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Slack Incoming Webhook').getRange('A1').getValue()
   let text = ''
-
 
   // まず、削除されたイベントを見る
   for (let i = 0; i < removedEvents.length; i++) {
@@ -139,19 +131,18 @@ const postToSlack = (id, name) => {
       const creator = hasCreatorNameInTitle(title) ? '' : `（${changedEvents[i].creators}）`
       text += ` ${_MMdd(startTime)} ${_HHmm(startTime)}-${_HHmm(endTime)} ${title}${creator}\n`
     }
-
   }
-  let roomName = ':calendar:' + name + "予約\n"
-  let data = { "username": "Googlecalendar-Bot", "text": roomName + text, "icon_emoji": ":spiral_calendar_pad: " }
-  let payload = JSON.stringify(data)
-  let options = {
-    "method": "POST",
-    "contentType": "application/json",
-    "payload": payload
+  const roomName = `:calendar:${name}予約\n`
+  const data = { username: 'Googlecalendar-Bot', text: roomName + text, icon_emoji: ':spiral_calendar_pad: ' }
+  const payload = JSON.stringify(data)
+  const options = {
+    method: 'POST',
+    contentType: 'application/json',
+    payload: payload
   }
   UrlFetchApp.fetch(url, options)
 
-  //処理終了後、スプレッドシートをクリアし、最新の予定を記録
+  // 処理終了後、スプレッドシートをクリアし、最新の予定を記録
   s.clear()
   if (events.length !== 0) {
     s.getRange(1, 1, events.length).setValues(Object.keys(currentEventObject).map(key => [JSON.stringify(currentEventObject[key])]))
@@ -159,7 +150,7 @@ const postToSlack = (id, name) => {
 }
 
 const getMeetingRoomName = id => {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("カレンダーID")
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('カレンダーID')
   const values = ss.getDataRange().getValues()
   for (let i = 0; i < values.length; i++) {
     if (values[i][1] === id) {
@@ -169,6 +160,7 @@ const getMeetingRoomName = id => {
   return null
 }
 
+// eslint-disable-next-line no-unused-vars
 const onCalendarEventUpdated = e => {
   const id = e.calendarId
   const name = getMeetingRoomName(id)
