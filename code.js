@@ -149,7 +149,7 @@ function addEventToRoom (strGroup) {
   strGroup.roomName = roomdata[2]
 
   const calendar = CalendarApp.getCalendarById(calendarId)
-  const title = strGroup.name === undefined ? strGroup.title : strGroup.title + ' ' + strGroup.name
+  const title = strGroup.name === undefined ? strGroup.title : `${strGroup.title}（${strGroup.name}）`
   const startTime = new Date(strGroup.day + ' ' + strGroup.startTime)
   const endTime = new Date(strGroup.day + ' ' + strGroup.endTime)
   calendar.createEvent(title, startTime, endTime)
