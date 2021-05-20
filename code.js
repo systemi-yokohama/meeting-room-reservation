@@ -1,4 +1,4 @@
-/* global CalendarApp, ContentService, HtmlService, Logger, SpreadsheetApp, Utilities */
+/* global CalendarApp, ContentService, HtmlService, Logger, ScriptApp, SpreadsheetApp, Utilities */
 
 'use strict'
 
