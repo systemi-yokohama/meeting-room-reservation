@@ -1,10 +1,8 @@
-/* global CalendarApp, Logger, SpreadsheetApp, UrlFetchApp, Utilities */
+/* global Calendar, CalendarApp, Logger, PropertiesService, SpreadsheetApp, UrlFetchApp, Utilities */
 
 'use strict'
 
 const SPREADSHEET_ID = '1RkFxDI5wWxlZTxC8bLkR6DRHXYEvdk5jIwE64rGzYXE'
-const ssEtag = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("etag保存用")
-
 
 const postToSlack = (id, name) => {
   // スプレッドシート読み込み(月初日から月末日の予定を取得)
@@ -136,8 +134,8 @@ const postToSlack = (id, name) => {
   }
 
   // 予約枠を使用した際にどの配列にも入らないが、イベントが更新された判定になるため判定を追加(根本的な解決にはならない)
-  if (addedEvents.length === 0 && changedEvents.length === 0 && removedEvents.length == 0) {
-    return null;
+  if (addedEvents.length === 0 && changedEvents.length === 0 && removedEvents.length === 0) {
+    return null
   }
 
   const roomName = `:calendar:${name}予約\n`
@@ -173,32 +171,37 @@ const onCalendarEventUpdated = e => {
   const id = e.calendarId
   const name = getMeetingRoomName(id)
 
-  const properties = PropertiesService.getScriptProperties();
-  const nextSyncToken = properties.getProperty("syncToken");
+  const properties = PropertiesService.getScriptProperties()
+  const nextSyncToken = properties.getProperty('syncToken')
   const optionalArgs = {
-    syncToken: nextSyncToken,
-  };
-  const events = Calendar.Events.list(id, optionalArgs);
+    syncToken: nextSyncToken
+  }
+  const events = Calendar.Events.list(id, optionalArgs)
+  const ssETag = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('etag保存用')
+
+  /**
+   * 最新の予定のetagをスプレッドシートに保存(10個まで)
+   *
+   * @param {string} etag このイベントの ETag
+   * @returns {boolean} 過去 10 回のイベントに同一の ETag が含まれていたか否か
+   */
+  const updateETag = (etag) => {
+    const values = ssETag.getValues()
+    // 1列目目の1行目から9行目を、1列目の2行目へ移動させる
+    ssETag.getRange(1, 1, 9, 1).moveTo(ssETag.getRange(2, 1))
+    // 1列目の1行目に最新イベント固有のetagをセットする
+    ssETag.getRange(1, 1).setValue([etag])
+    return values.flatMap(v => v).includes(etag)
+  }
 
   // 予定イベントのetagが前回と違う場合のみslack通知を実行
-  setEtag(events)
-  ssEtag.getRange(1, 1).getValue() === ssEtag.getRange(2, 1).getValue() || postToSlack(id, name)
-
-}
-
-
-/**
- * 最新の予定のetagをスプレッドシートに保存(10個まで)
- */
-const setEtag = (events) => {
-  // 1列目目の1行目から9行目を、1列目の2行目へ移動させる
-  ssEtag.getRange(1, 1, 9, 1).moveTo(ssEtag.getRange(2, 1))
-  // 1列目の1行目に最新イベント固有のetagをセットする
-  ssEtag.getRange(1, 1).setValue([events.etag])
+  // Google カレンダーから会議室を追加して予定を作成すると同一イベントが複数回通知されることがあるが ETag が同一であるため 2 回目以降を処理しないようにする
+  updateETag(events.etag) || postToSlack(id, name)
 }
 
 // デバッグ
+// eslint-disable-next-line no-unused-vars
 const debug = (events) => {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("デバッグ")
-  ss.getRange("A1").setValue(events)
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('デバッグ')
+  ss.getRange('A1').setValue(events)
 }
