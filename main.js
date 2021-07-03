@@ -1,4 +1,4 @@
-/* global Calendar, CalendarApp, Logger, PropertiesService, SpreadsheetApp, UrlFetchApp, Utilities */
+/* global Calendar, CalendarApp, LockService, Logger, PropertiesService, SpreadsheetApp, UrlFetchApp, Utilities */
 
 'use strict'
 
@@ -186,11 +186,16 @@ const onCalendarEventUpdated = e => {
    * @returns {boolean} 過去 10 回のイベントに同一の ETag が含まれていたか否か
    */
   const updateETag = (etag) => {
+    const lock = LockService.getScriptLock()
+    while (!lock.tryLock(10 * 1000)) {
+      // Nothing to do
+    }
     const values = ssETag.getDataRange().getValues()
     // 1列目目の1行目から9行目を、1列目の2行目へ移動させる
     ssETag.getRange(1, 1, 9, 1).moveTo(ssETag.getRange(2, 1))
     // 1列目の1行目に最新イベント固有のetagをセットする
     ssETag.getRange(1, 1).setValue([etag])
+    lock.releaseLock()
     return values.flatMap(v => v).includes(etag)
   }
 
