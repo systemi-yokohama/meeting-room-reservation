@@ -1,6 +1,6 @@
 {
   "name": "meeting-room-reservation",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "Slack のスラッシュコマンドと Google カレンダーを連動するツール",
   "repository": {
     "type": "git",
