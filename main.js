@@ -186,7 +186,7 @@ const onCalendarEventUpdated = e => {
    * @returns {boolean} 過去 10 回のイベントに同一の ETag が含まれていたか否か
    */
   const updateETag = (etag) => {
-    const values = ssETag.getValues()
+    const values = ssETag.getDataRange().getValues()
     // 1列目目の1行目から9行目を、1列目の2行目へ移動させる
     ssETag.getRange(1, 1, 9, 1).moveTo(ssETag.getRange(2, 1))
     // 1列目の1行目に最新イベント固有のetagをセットする
