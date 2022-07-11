@@ -14,7 +14,7 @@ function doPost (e) {
       const event = calendar.getEventById(eventId)
       event.deleteEvent()
     })
-    return HtmlService.createHtmlOutput('<html><body>削除しました!</body><html>')
+    return HtmlService.createHtmlOutput('<html><body>削除しました!</body></html>')
   }
 
   const str = e.parameter.text
