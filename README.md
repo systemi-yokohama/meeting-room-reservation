@@ -7,11 +7,13 @@
 `clasp` コマンドで GAS にコードを反映する。
 
 ```shell-session
-$ clasp login
+$ npm ci
 ...
-$ clasp push
+$ npx clasp login
 ...
-$ clasp open
+$ npx clasp push
+...
+$ npx clasp open
 ...
 $
 ```
