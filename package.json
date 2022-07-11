@@ -13,6 +13,7 @@
   },
   "homepage": "https://github.com/systemi-yokohama/meeting-room-reservation#readme",
   "devDependencies": {
+    "clasp": "^1.0.0",
     "eslint": "^7.30.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-import": "^2.23.4",
